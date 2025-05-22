@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpeakSmart AI - English Practice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .hidden {
+            display: none !important;
+        }
+        /* Custom scrollbar for webkit browsers */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; /* slate-300 */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; /* slate-500 */
+        }
+        .line-clamp-2 {
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+        }
+         .line-clamp-3 { /* For transcript preview */
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+        }
+        .animate-bounce {
+            animation: bounce 1s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(-15%);
+                animation-timing-function: cubic-bezier(0.8,0,1,1);
+            }
+            50% {
+                transform: translateY(0);
+                animation-timing-function: cubic-bezier(0,0,0.2,1);
+            }
+        }
+         /* Custom modal for alerts/confirmations */
+        .custom-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .custom-modal {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+        }
+        .custom-modal-buttons button {
+            margin: 0 10px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        #mobileMenuLinks {
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        #mobileMenuLinks.open {
+            max-height: 500px; 
+            opacity: 1;
+        }
+        .guidance-points {
+            list-style-type: disc;
+            margin-left: 20px;
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: #475569; /* slate-600 */
+        }
+        #transcriptDisplay, #viewTranscriptDisplay {
+            background-color: #f8fafc; /* cool-gray-50 */
+            border: 1px solid #e2e8f0; /* cool-gray-200 */
+            padding: 10px;
+            border-radius: 6px;
+            min-height: 100px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap; /* Preserve line breaks */
+            font-size: 0.9em;
+            color: #334155; /* cool-gray-700 */
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/lucide-static@latest/rosetta/lucide.js"></script>
+</head>
+<body class="bg-gradient-to-br from-sky-100 to-indigo-200 text-slate-800 flex flex-col min-h-screen">
+
+    <div id="notificationArea" class="fixed top-4 right-4 bg-green-500 text-white p-3 rounded-lg shadow-md z-50 hidden">
+        Notification Message
+    </div>
+    <div id="errorArea" class="fixed top-16 right-4 bg-red-500 text-white p-3 rounded-lg shadow-md z-50 hidden">
+        Error Message
+    </div>
+     <div id="customModalOverlay" class="custom-modal-overlay hidden">
+        <div class="custom-modal">
+            <p id="customModalMessage" class="mb-4 text-slate-700">Modal message here.</p>
+            <div id="customModalButtons" class="custom-modal-buttons">
+                </div>
+        </div>
+    </div>
+
+    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-40">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2 cursor-pointer" id="navHomeLogo">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600 lucide lucide-video"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+                    <h1 class="text-2xl font-bold text-indigo-700">SpeakSmart AI</h1>
+                </div>
+                <div class="hidden md:flex space-x-2 sm:space-x-4">
+                    <button id="navHomeDesktop" class="text-indigo-600 hover:text-indigo-800 font-medium px-3 py-2 rounded-md hover:bg-indigo-50 transition-colors duration-150 flex items-center space-x-1">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        <span>Home</span>
+                    </button>
+                    <button id="navNewQuestionDesktop" class="text-indigo-600 hover:text-indigo-800 font-medium px-3 py-2 rounded-md hover:bg-indigo-50 transition-colors duration-150 flex items-center space-x-1">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-help-circle"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                        <span>New Question</span>
+                    </button>
+                    <button id="navMyPracticesDesktop" class="text-indigo-600 hover:text-indigo-800 font-medium px-3 py-2 rounded-md hover:bg-indigo-50 transition-colors duration-150 flex items-center space-x-1">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+                        <span>My Practices</span>
+                    </button>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobileMenuButton" class="text-slate-600 hover:text-indigo-600 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+                        <svg id="menuIconOpen" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+                        <svg id="menuIconClose" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x hidden"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div id="mobileMenuLinks" class="md:hidden mt-2 pb-3">
+                <button id="navHomeMobile" class="block w-full text-left text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 font-medium px-3 py-2 rounded-md transition-colors duration-150 flex items-center space-x-2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <span>Home</span>
+                </button>
+                <button id="navNewQuestionMobile" class="block w-full text-left text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 font-medium px-3 py-2 rounded-md transition-colors duration-150 flex items-center space-x-2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-help-circle"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                    <span>New Question</span>
+                </button>
+                <button id="navMyPracticesMobile" class="block w-full text-left text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 font-medium px-3 py-2 rounded-md transition-colors duration-150 flex items-center space-x-2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+                    <span>My Practices</span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div id="loadingOverlay" class="fixed inset-0 bg-slate-500 bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin text-white lucide lucide-refresh-cw"><path d="M21 12a9 9 0 0 1-9 9H3"/><path d="M3 12a9 9 0 0 1 9-9h9"/><path d="M21 12v4.5"/><path d="M3 12v-4.5"/></svg>
+        </div>
+
+        <section id="homePage" class="page-section">
+            <div class="text-center flex flex-col items-center justify-center py-12">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600 mb-6 animate-bounce lucide lucide-video"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+                <h2 class="text-4xl font-extrabold text-slate-800 mb-4">Welcome to SpeakSmart AI!</h2>
+                <p class="text-lg text-slate-600 mb-8 max-w-2xl">
+                    Improve your English speaking skills with daily video practice. Get AI-generated questions, record your responses, get a transcript, and track your progress.
+                </p>
+                <div class="space-y-4 sm:space-y-0 sm:space-x-6 flex flex-col sm:flex-row">
+                    <button id="homeGetQuestionBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105 duration-150 text-lg flex items-center justify-center space-x-2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-help-circle"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                        <span>Get a New Question</span>
+                    </button>
+                    <button id="homeReviewPracticesBtn" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105 duration-150 text-lg flex items-center justify-center space-x-2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+                        <span>Review My Practices</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section id="questionsPage" class="page-section hidden">
+            <div class="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-xl">
+                <h2 class="text-3xl font-bold text-slate-800 mb-6 text-center">Generate a Practice Question</h2>
+                <div class="mb-6">
+                    <label for="topicSelect" class="block text-sm font-medium text-slate-700 mb-1">Choose a Topic:</label>
+                    <select id="topicSelect" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                        </select>
+                </div>
+                <button id="generateQuestionBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105 duration-150 flex items-center justify-center space-x-2 disabled:opacity-50">
+                    <span id="generateQuestionBtnIcon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-help-circle"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                    </span>
+                    <span id="generateQuestionBtnText">Generate Question</span>
+                </button>
+                <div id="currentQuestionDisplay" class="mt-8 p-6 bg-indigo-50 rounded-lg border border-indigo-200 hidden">
+                    <h3 class="text-lg font-semibold text-indigo-700 mb-2">Your Question (Topic: <span id="currentQuestionTopicDisplay"></span>):</h3>
+                    <p id="currentQuestionTextDisplay" class="text-slate-700 text-lg leading-relaxed"></p>
+                    <ul id="currentQuestionGuidanceDisplay" class="guidance-points"></ul>
+                    <button id="startRecordingBtnFromQuestion" class="mt-6 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105 duration-150 flex items-center justify-center space-x-2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                        <span>Start Recording</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section id="recordingPage" class="page-section hidden">
+            <div class="max-w-3xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-xl">
+                <button id="backToQuestionsBtn" class="mb-6 text-indigo-600 hover:text-indigo-800 font-medium flex items-center space-x-1">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left"><path d="m15 18-6-6 6-6"/></svg>
+                    <span>Back to Questions</span>
+                </button>
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Record Your Response</h2>
+                <div class="mb-6 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                    <p class="text-sm font-semibold text-indigo-700">Topic: <span id="recordingQuestionTopicDisplay"></span></p>
+                    <p id="recordingQuestionTextDisplay" class="text-slate-700 text-md"></p>
+                    <ul id="recordingQuestionGuidanceDisplay" class="guidance-points"></ul>
+                </div>
+                <div class="mb-6 aspect-video bg-slate-200 rounded-lg overflow-hidden shadow-inner">
+                    <video id="videoElement" class="w-full h-full object-cover" playsinline autoplay muted></video>
+                </div>
+                <div id="timerDisplay" class="text-center mb-2 font-mono text-2xl text-slate-700">00:00</div>
+                
+                <button id="startRecordingBtn" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-transform transform hover:scale-105 duration-150 flex items-center justify-center space-x-2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                    <span>Start Recording</span>
+                </button>
+                <button id="stopRecordingBtn" class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-transform transform hover:scale-105 duration-150 flex items-center justify-center space-x-2 hidden">
+                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-stop-circle"><circle cx="12" cy="12" r="10"/><rect width="6" height="6" x="9" y="9"/></svg>
+                    <span>Stop Recording</span>
+                </button>
+
+                <div id="reflectionArea" class="mt-6 space-y-6 hidden">
+                    <p class="text-center text-green-600 font-semibold">Recording complete! Review your video, transcript, and add reflections below.</p>
+                    
+                    <div>
+                        <label for="transcriptDisplay" class="block text-sm font-medium text-slate-700 mb-1">Transcript:</label>
+                        <div id="transcriptDisplay" class="whitespace-pre-wrap">Transcript will appear here...</div>
+                         <p id="speechRecognitionError" class="text-xs text-red-500 mt-1 hidden"></p>
+                    </div>
+
+                    <div>
+                        <label for="notesInput" class="block text-sm font-medium text-slate-700 mb-1">My Notes / Reflections:</label>
+                        <textarea id="notesInput" rows="3" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="What went well? What was challenging?"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Self-Rating (1-5 stars):</label>
+                        <div id="ratingStars" class="flex space-x-1">
+                            </div>
+                    </div>
+                     <div>
+                        <label for="improvementAreasInput" class="block text-sm font-medium text-slate-700 mb-1">Areas for Improvement:</label>
+                        <textarea id="improvementAreasInput" rows="2" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., Fluency, pronunciation..."></textarea>
+                    </div>
+                    <button id="savePracticeBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-transform transform hover:scale-105 duration-150 flex items-center justify-center space-x-2 disabled:opacity-50">
+                        <span id="savePracticeBtnIcon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span>
+                        <span id="savePracticeBtnText">Save Practice Session</span>
+                    </button>
+                     <button id="recordAgainBtn" class="w-full mt-2 bg-slate-500 hover:bg-slate-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-transform transform hover:scale-105 duration-150 flex items-center justify-center space-x-2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                        <span>Record Again</span>
+                    </button>
+                </div>
+                <p class="mt-4 text-xs text-slate-500 text-center">
+                    Note: Video is for immediate playback. Transcript and reflections are saved.
+                </p>
+            </div>
+        </section>
+
+        <section id="reviewPage" class="page-section hidden">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold text-slate-800 mb-8 text-center">My Practice Sessions</h2>
+                <div id="practiceSessionsList" class="space-y-6">
+                    </div>
+                <div id="noSessionsMessage" class="text-center py-10 hidden">
+                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 mx-auto mb-4 lucide lucide-list-x"><path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/><path d="m19 10-4 4"/><path d="m15 10 4 4"/></svg>
+                    <h2 class="text-2xl font-semibold text-slate-700 mb-2">No Practice Sessions Yet</h2>
+                    <p class="text-slate-500 mb-6">Start by generating a question and recording your response!</p>
+                    <button id="reviewGetQuestionBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-transform transform hover:scale-105 duration-150">
+                        Get a New Question
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section id="viewPracticePage" class="page-section hidden">
+             <div class="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-xl">
+                <button id="backToReviewBtn" class="mb-6 text-indigo-600 hover:text-indigo-800 font-medium flex items-center space-x-1">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left"><path d="m15 18-6-6 6-6"/></svg>
+                    <span>Back to All Practices</span>
+                </button>
+
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="text-2xl font-bold text-slate-800">Practice Details</h2>
+                    <div class="flex space-x-2">
+                        <button id="editPracticeBtn" class="p-2 text-slate-600 hover:text-indigo-600 rounded-md hover:bg-indigo-50 transition-colors" title="Edit Session">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-edit-3"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                        </button>
+                        <button id="deletePracticeBtn" class="p-2 text-slate-600 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors disabled:opacity-50" title="Delete Session">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="viewPracticeContent" class="space-y-4">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500">Topic</p>
+                        <p id="viewTopic" class="text-lg text-slate-700"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-slate-500">Date Practiced</p>
+                        <p id="viewDatePracticed" class="text-lg text-slate-700"></p>
+                    </div>
+                    <div id="viewLastUpdatedContainer" class="hidden">
+                        <p class="text-sm font-medium text-slate-500">Last Updated</p>
+                        <p id="viewLastUpdated" class="text-lg text-slate-700"></p>
+                    </div>
+                    <div class="p-4 bg-indigo-50 rounded-md border border-indigo-100">
+                        <p class="text-sm font-medium text-indigo-600">Question</p>
+                        <p id="viewQuestionTextDisplay" class="text-lg text-indigo-800"></p>
+                        <ul id="viewQuestionGuidanceDisplay" class="guidance-points"></ul>
+                    </div>
+
+                     <div id="viewTranscriptContainer" class="hidden">
+                        <p class="text-sm font-medium text-slate-500">Transcript</p>
+                        <div id="viewTranscriptDisplay"></div>
+                    </div>
+
+                    <div id="displayModePracticeDetails">
+                        <div>
+                            <p class="text-sm font-medium text-slate-500">My Notes / Reflections</p>
+                            <p id="viewNotes" class="text-lg text-slate-700 whitespace-pre-wrap"></p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-slate-500">Self-Rating</p>
+                            <div id="viewRatingStars" class="flex items-center">
+                                </div>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-slate-500">Areas for Improvement</p>
+                            <p id="viewImprovementAreas" class="text-lg text-slate-700 whitespace-pre-wrap"></p>
+                        </div>
+                    </div>
+
+                    <div id="editModePracticeDetails" class="hidden space-y-4">
+                        <div>
+                            <label for="editNotesInput" class="block text-sm font-medium text-slate-700 mb-1">My Notes / Reflections:</label>
+                            <textarea id="editNotesInput" rows="4" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Self-Rating (1-5 stars):</label>
+                            <div id="editRatingStars" class="flex space-x-1">
+                                </div>
+                        </div>
+                        <div>
+                            <label for="editImprovementAreasInput" class="block text-sm font-medium text-slate-700 mb-1">Areas for Improvement:</label>
+                            <textarea id="editImprovementAreasInput" rows="3" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                        </div>
+                        <button id="saveChangesBtn" class="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-transform transform hover:scale-105 duration-150 flex items-center justify-center space-x-2 disabled:opacity-50">
+                            <span id="saveChangesBtnIcon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span>
+                            <span id="saveChangesBtnText">Save Changes</span>
+                        </button>
+                         <button id="cancelEditBtn" class="w-full mt-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-3 px-6 rounded-lg shadow-md flex items-center justify-center space-x-2">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+                 <button id="practiceAgainFromViewBtn" class="mt-8 w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-transform transform hover:scale-105 duration-150 flex items-center justify-center space-x-2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                    <span>Practice this Question Again</span>
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white/80 backdrop-blur-md py-6 text-center text-sm text-slate-600 border-t border-slate-200">
+        <p>&copy; <span id="currentYear"></span> SpeakSmart AI. Practice makes perfect!</p>
+        <p id="userIdDisplay" class="text-xs mt-1 hidden"></p>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, collection, getDocs, Timestamp, setDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-english-learner-html-app';
+        const GEMINI_API_KEY = ""; 
+        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+        let fbApp, fbAuth, fbDb;
+        let currentUserId = null;
+        let isAuthReady = false;
+        let currentQuestionStore = { text: '', topic: '', guidance: [] };
+        let practiceSessionsStore = [];
+        let selectedPracticeStore = null;
+        let isLoadingGlobal = false;
+        let currentTranscript = '';
+        let speechRecognition;
+        const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+
+        const TOPICS_LIST = ["Travel", "Hobbies", "Current Events", "Personal Experiences", "Work", "Technology", "Culture", "Food", "Education", "Future Goals", "Daily Life", "Dreams"];
+
+        const pages = {
+            home: document.getElementById('homePage'),
+            questions: document.getElementById('questionsPage'),
+            recording: document.getElementById('recordingPage'),
+            review: document.getElementById('reviewPage'),
+            viewPractice: document.getElementById('viewPracticePage'),
+        };
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const notificationArea = document.getElementById('notificationArea');
+        const errorArea = document.getElementById('errorArea');
+        const customModalOverlay = document.getElementById('customModalOverlay');
+        const customModalMessage = document.getElementById('customModalMessage');
+        const customModalButtons = document.getElementById('customModalButtons');
+        
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
+        const mobileMenuLinks = document.getElementById('mobileMenuLinks');
+        const menuIconOpen = document.getElementById('menuIconOpen');
+        const menuIconClose = document.getElementById('menuIconClose');
+        const transcriptDisplayEl = document.getElementById('transcriptDisplay');
+        const speechRecognitionErrorEl = document.getElementById('speechRecognitionError');
+        const viewTranscriptContainerEl = document.getElementById('viewTranscriptContainer');
+        const viewTranscriptDisplayEl = document.getElementById('viewTranscriptDisplay');
+
+
+        function showLoading(show) {
+            isLoadingGlobal = show;
+            loadingOverlay.classList.toggle('hidden', !show);
+            document.querySelectorAll('button').forEach(btn => {
+                if (btn.id !== 'mobileMenuButton') {
+                    btn.disabled = show;
+                }
+            });
+        }
+
+        function showNotification(message) {
+            notificationArea.textContent = message;
+            notificationArea.classList.remove('hidden');
+            setTimeout(() => notificationArea.classList.add('hidden'), 3000);
+        }
+
+        function showError(message) {
+            errorArea.textContent = message;
+            errorArea.classList.remove('hidden');
+            setTimeout(() => errorArea.classList.add('hidden'), 5000);
+        }
+        
+        function showCustomModal(message, buttonsConfig) {
+            customModalMessage.textContent = message;
+            customModalButtons.innerHTML = ''; 
+
+            buttonsConfig.forEach(btnConfig => {
+                const button = document.createElement('button');
+                button.textContent = btnConfig.text;
+                button.className = btnConfig.className || 'bg-indigo-500 hover:bg-indigo-600 text-white';
+                button.onclick = () => {
+                    customModalOverlay.classList.add('hidden');
+                    if (btnConfig.onClick) btnConfig.onClick();
+                };
+                customModalButtons.appendChild(button);
+            });
+            customModalOverlay.classList.remove('hidden');
+        }
+
+        function closeMobileMenu() {
+            mobileMenuLinks.classList.remove('open');
+            menuIconOpen.classList.remove('hidden');
+            menuIconClose.classList.add('hidden');
+            mobileMenuButton.setAttribute('aria-expanded', 'false');
+        }
+
+
+        function navigateTo(pageKey, data1 = null, data2 = null) {
+            console.log(`Navigating to ${pageKey}`);
+            Object.values(pages).forEach(page => page.classList.add('hidden'));
+            if (pages[pageKey]) {
+                pages[pageKey].classList.remove('hidden');
+            } else {
+                console.error(`Page ${pageKey} not found, defaulting to home.`);
+                pages.home.classList.remove('hidden');
+            }
+            window.scrollTo(0, 0); 
+            closeMobileMenu(); 
+
+            if (pageKey === 'questions') setupQuestionsPage();
+            if (pageKey === 'recording' && data1) setupRecordingPage(data1); 
+            if (pageKey === 'review') setupReviewPage();
+            if (pageKey === 'viewPractice' && data1) setupViewPracticePage(data1); 
+        }
+
+        async function initializeFirebase() {
+            try {
+                fbApp = initializeApp(firebaseConfig);
+                fbAuth = getAuth(fbApp);
+                fbDb = getFirestore(fbApp);
+                console.log("Firebase initialized");
+
+                onAuthStateChanged(fbAuth, async (user) => {
+                    if (user) {
+                        currentUserId = user.uid;
+                        console.log("User is signed in:", currentUserId);
+                        document.getElementById('userIdDisplay').textContent = `User ID: ${currentUserId}`;
+                        document.getElementById('userIdDisplay').classList.remove('hidden');
+                    } else {
+                        console.log("User is signed out or token invalid, attempting to sign in.");
+                        try {
+                            const authToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                            if (authToken) {
+                                console.log("Attempting signInWithCustomToken");
+                                await signInWithCustomToken(fbAuth, authToken);
+                            } else {
+                                console.log("Attempting signInAnonymously");
+                                await signInAnonymously(fbAuth);
+                            }
+                        } catch (e) {
+                            console.error("Error during sign-in:", e);
+                            currentUserId = 'anonymous_fallback_' + crypto.randomUUID();
+                            showError("Authentication failed. Some features might be limited.");
+                            document.getElementById('userIdDisplay').textContent = `User ID (Fallback): ${currentUserId}`;
+                            document.getElementById('userIdDisplay').classList.remove('hidden');
+                        }
+                    }
+                    isAuthReady = true;
+                    const homePageIsVisible = pages.home.offsetParent !== null; 
+                    if (homePageIsVisible) {
+                         // Initial load on home
+                    } else {
+                        const visiblePage = Object.keys(pages).find(key => pages[key].offsetParent !== null);
+                        if (visiblePage) navigateTo(visiblePage); 
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                showError("Critical error: Could not connect to services. Please refresh.");
+                isAuthReady = true; 
+                currentUserId = 'offline_user_' + crypto.randomUUID();
+            }
+        }
+        
+        const topicSelect = document.getElementById('topicSelect');
+        const generateQuestionBtn = document.getElementById('generateQuestionBtn');
+        const currentQuestionDisplay = document.getElementById('currentQuestionDisplay');
+        const currentQuestionTopicDisplayEl = document.getElementById('currentQuestionTopicDisplay');
+        const currentQuestionTextDisplayEl = document.getElementById('currentQuestionTextDisplay');
+        const currentQuestionGuidanceDisplayEl = document.getElementById('currentQuestionGuidanceDisplay');
+        const startRecordingBtnFromQuestion = document.getElementById('startRecordingBtnFromQuestion');
+
+        const recordingQuestionTopicDisplayEl = document.getElementById('recordingQuestionTopicDisplay');
+        const recordingQuestionTextDisplayEl = document.getElementById('recordingQuestionTextDisplay');
+        const recordingQuestionGuidanceDisplayEl = document.getElementById('recordingQuestionGuidanceDisplay');
+        
+        const viewQuestionTextDisplayEl = document.getElementById('viewQuestionTextDisplay');
+        const viewQuestionGuidanceDisplayEl = document.getElementById('viewQuestionGuidanceDisplay');
+
+
+        function displayQuestionAndGuidance(questionText, guidancePoints, topic, textElement, guidanceElement, topicElement = null) {
+            textElement.textContent = questionText;
+            guidanceElement.innerHTML = ''; 
+            if (guidancePoints && guidancePoints.length > 0) {
+                guidancePoints.forEach(point => {
+                    const li = document.createElement('li');
+                    li.textContent = point;
+                    guidanceElement.appendChild(li);
+                });
+                guidanceElement.classList.remove('hidden');
+            } else {
+                guidanceElement.classList.add('hidden');
+            }
+            if (topicElement) {
+                topicElement.textContent = topic;
+            }
+        }
+
+        function setupQuestionsPage() {
+            topicSelect.innerHTML = TOPICS_LIST.map(topic => `<option value="${topic}">${topic}</option>`).join('');
+            if (currentQuestionStore.text) {
+                topicSelect.value = currentQuestionStore.topic;
+                displayQuestionAndGuidance(
+                    currentQuestionStore.text, 
+                    currentQuestionStore.guidance, 
+                    currentQuestionStore.topic,
+                    currentQuestionTextDisplayEl, 
+                    currentQuestionGuidanceDisplayEl,
+                    currentQuestionTopicDisplayEl
+                );
+                currentQuestionDisplay.classList.remove('hidden');
+            } else {
+                currentQuestionDisplay.classList.add('hidden');
+            }
+        }
+        
+        generateQuestionBtn.addEventListener('click', async () => {
+            const selectedTopic = topicSelect.value;
+            if (!selectedTopic) {
+                showError("Please select a topic.");
+                return;
+            }
+            showLoading(true);
+            document.getElementById('generateQuestionBtnText').textContent = 'Generating...';
+            document.getElementById('generateQuestionBtnIcon').innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin lucide lucide-refresh-cw"><path d="M21 12a9 9 0 0 1-9 9H3"/><path d="M3 12a9 9 0 0 1 9-9h9"/><path d="M21 12v4.5"/><path d="M3 12v-4.5"/></svg>`;
+
+            const prompt = `Generate an engaging, open-ended discussion question for an English language learner on the topic: ${selectedTopic}. The question should encourage speaking for 3-5 minutes. After the question, provide 2-3 simple bullet points as guidance for structuring their answer. Format the output exactly like this, with a blank line separating the question and the first bullet point:\n\n[The Question Itself]\n\n* Guidance point 1\n* Guidance point 2 (and so on if more points)`;
+            
+            try {
+                const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+                const response = await fetch(GEMINI_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API request failed: ${errorData?.error?.message || response.statusText}`);
+                }
+                const result = await response.json();
+                if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
+                    const rawText = result.candidates[0].content.parts[0].text.trim();
+                    const parts = rawText.split(/\n\s*\n\s*\*/); // Split by blank line(s) then asterisk
+                    let questionText = rawText;
+                    let guidance = [];
+
+                    if (parts.length > 1) {
+                        questionText = parts[0].trim();
+                        const guidanceBlock = "*" + parts.slice(1).join("\n\n*"); // Rejoin if multiple guidance blocks were split
+                         guidance = guidanceBlock.split(/\n\s*[\*-]\s*/) // Split by newline then asterisk or dash
+                                              .map(line => line.trim())
+                                              .filter(line => line.length > 0)
+                                              .map(line => line.replace(/^[\*-]\s*/, '').trim()); // Remove leading symbols
+                    } else {
+                        // Fallback if the specific split pattern isn't found, try to find guidance differently
+                        const questionEndMatch = rawText.match(/\n\s*\n\s*[\*-]/); // Look for a blank line then a bullet
+                        if (questionEndMatch) {
+                            questionText = rawText.substring(0, questionEndMatch.index).trim();
+                            const guidanceBlock = rawText.substring(questionEndMatch.index).trim();
+                            guidance = guidanceBlock.split(/\n\s*[\*-]\s*/)
+                                              .map(line => line.trim())
+                                              .filter(line => line.length > 0)
+                                              .map(line => line.replace(/^[\*-]\s*/, '').trim());
+                        }
+                        // If still no guidance, it will be an empty array
+                    }
+                    
+                    currentQuestionStore = { text: questionText, topic: selectedTopic, guidance: guidance };
+                    
+                    displayQuestionAndGuidance(
+                        currentQuestionStore.text, 
+                        currentQuestionStore.guidance, 
+                        currentQuestionStore.topic,
+                        currentQuestionTextDisplayEl, 
+                        currentQuestionGuidanceDisplayEl,
+                        currentQuestionTopicDisplayEl
+                    );
+                    currentQuestionDisplay.classList.remove('hidden');
+                    showNotification("New question generated!");
+                } else {
+                    throw new Error("No question generated or unexpected response structure.");
+                }
+            } catch (err) {
+                console.error("Error generating question:", err);
+                showError(`Failed to generate question: ${err.message}. Using a default.`);
+                currentQuestionStore = { 
+                    text: "Sorry, I couldn't generate a question. How about you talk about your favorite movie?", 
+                    topic: selectedTopic, 
+                    guidance: ["Think about the plot.", "Mention your favorite characters.", "Explain why you like it."] 
+                };
+                displayQuestionAndGuidance(
+                    currentQuestionStore.text, 
+                    currentQuestionStore.guidance, 
+                    currentQuestionStore.topic,
+                    currentQuestionTextDisplayEl, 
+                    currentQuestionGuidanceDisplayEl,
+                    currentQuestionTopicDisplayEl
+                );
+                currentQuestionDisplay.classList.remove('hidden');
+            } finally {
+                showLoading(false);
+                document.getElementById('generateQuestionBtnText').textContent = 'Generate Question';
+                document.getElementById('generateQuestionBtnIcon').innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-help-circle"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>`;
+            }
+        });
+        
+        startRecordingBtnFromQuestion.addEventListener('click', () => {
+            if (currentQuestionStore.text) {
+                navigateTo('recording', currentQuestionStore);
+            } else {
+                showError("Please generate a question first.");
+            }
+        });
+
+        const videoElement = document.getElementById('videoElement');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const startRecordingBtn = document.getElementById('startRecordingBtn');
+        const stopRecordingBtn = document.getElementById('stopRecordingBtn');
+        const reflectionArea = document.getElementById('reflectionArea');
+        const notesInput = document.getElementById('notesInput');
+        const ratingStarsContainer = document.getElementById('ratingStars');
+        const improvementAreasInput = document.getElementById('improvementAreasInput');
+        const savePracticeBtn = document.getElementById('savePracticeBtn');
+        const recordAgainBtn = document.getElementById('recordAgainBtn');
+
+        let mediaRecorder;
+        let recordedChunks = [];
+        let currentStream;
+        let timerInterval;
+        let secondsRecorded = 0;
+        let currentRecordingRating = 0;
+
+        function setupRecordingPage(question) {
+            currentQuestionStore = question; 
+            displayQuestionAndGuidance(
+                question.text, 
+                question.guidance, 
+                question.topic,
+                recordingQuestionTextDisplayEl, 
+                recordingQuestionGuidanceDisplayEl,
+                recordingQuestionTopicDisplayEl
+            );
+            
+            videoElement.src = null;
+            videoElement.srcObject = null;
+            videoElement.controls = false;
+            videoElement.muted = true; 
+            notesInput.value = '';
+            improvementAreasInput.value = '';
+            currentRecordingRating = 0;
+            renderStars(ratingStarsContainer, currentRecordingRating, (newRating) => currentRecordingRating = newRating);
+            
+            currentTranscript = ''; // Reset transcript
+            transcriptDisplayEl.textContent = 'Transcript will appear here...';
+            speechRecognitionErrorEl.classList.add('hidden');
+            speechRecognitionErrorEl.textContent = '';
+
+
+            reflectionArea.classList.add('hidden');
+            startRecordingBtn.classList.remove('hidden');
+            startRecordingBtn.querySelector('span').textContent = "Start Recording"; 
+            stopRecordingBtn.classList.add('hidden');
+            secondsRecorded = 0;
+            timerDisplay.textContent = formatTime(secondsRecorded);
+            if (timerInterval) clearInterval(timerInterval); 
+        }
+
+        function formatTime(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+        
+        function renderStars(container, currentRating, onClickCallback, isEditable = true) {
+            container.innerHTML = '';
+            [1, 2, 3, 4, 5].forEach(starValue => {
+                const starIcon = document.createElement('span');
+                starIcon.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star ${currentRating >= starValue ? 'text-yellow-400 fill-yellow-400' : 'text-slate-300'} ${isEditable ? 'cursor-pointer' : 'cursor-default'}"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+                if (isEditable) {
+                    starIcon.onclick = () => {
+                        onClickCallback(starValue);
+                        renderStars(container, starValue, onClickCallback, isEditable); 
+                    };
+                }
+                container.appendChild(starIcon);
+            });
+        }
+
+        function startTranscription() {
+            if (!SpeechRecognitionAPI) {
+                speechRecognitionErrorEl.textContent = "Speech recognition is not supported in this browser.";
+                speechRecognitionErrorEl.classList.remove('hidden');
+                transcriptDisplayEl.textContent = "Transcription unavailable.";
+                return;
+            }
+            speechRecognition = new SpeechRecognitionAPI();
+            speechRecognition.continuous = true;
+            speechRecognition.interimResults = true;
+            speechRecognition.lang = 'en-US'; // Or allow user to select
+
+            currentTranscript = ''; // Reset transcript
+            transcriptDisplayEl.textContent = 'Listening...'; // Initial feedback
+
+            speechRecognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscriptSegment = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscriptSegment += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+                // Update the display with interim results for better UX
+                transcriptDisplayEl.textContent = currentTranscript + finalTranscriptSegment + interimTranscript; 
+                
+                if (finalTranscriptSegment) { // Append final segments to the stored transcript
+                    currentTranscript += finalTranscriptSegment + ' '; 
+                }
+            };
+
+            speechRecognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                let errorMessage = `Speech recognition error: ${event.error}.`;
+                if (event.error === 'no-speech') {
+                    errorMessage = "No speech detected. Please try speaking louder or closer to the microphone.";
+                } else if (event.error === 'audio-capture') {
+                    errorMessage = "Microphone problem. Please ensure it's enabled and working.";
+                } else if (event.error === 'not-allowed') {
+                    errorMessage = "Permission to use microphone was denied or is required for transcription.";
+                }
+                speechRecognitionErrorEl.textContent = errorMessage;
+                speechRecognitionErrorEl.classList.remove('hidden');
+                transcriptDisplayEl.textContent = currentTranscript || "Transcription stopped due to error.";
+            };
+
+            speechRecognition.onend = () => {
+                console.log('Speech recognition ended.');
+                // Final update to ensure the display matches the stored transcript
+                transcriptDisplayEl.textContent = currentTranscript.trim() || "Transcription finished or stopped.";
+                 if (isRecording) { // If media recorder is still going but speech rec stopped (e.g. timeout)
+                    // Optionally restart it, but this can be complex. For now, just log.
+                    console.log("Speech recognition ended but recording is still active.");
+                 }
+            };
+            
+            try {
+                speechRecognition.start();
+                console.log('Speech recognition started.');
+            } catch (e) {
+                console.error("Error starting speech recognition:", e);
+                speechRecognitionErrorEl.textContent = "Could not start speech recognition. " + e.message;
+                speechRecognitionErrorEl.classList.remove('hidden');
+                transcriptDisplayEl.textContent = "Transcription failed to start.";
+            }
+        }
+
+        function stopTranscription() {
+            if (speechRecognition && speechRecognition.stop) {
+                speechRecognition.stop();
+                console.log('Speech recognition stopped.');
+            }
+            // Final content of transcriptDisplayEl should be set by onend
+        }
+
+        let isRecording = false; // To track media recorder state for speech rec onend logic
+
+        startRecordingBtn.addEventListener('click', async () => {
+            try {
+                currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                videoElement.srcObject = currentStream;
+                videoElement.muted = true; 
+                videoElement.play().catch(e => console.warn("Autoplay prevented:", e));
+
+                recordedChunks = [];
+                mediaRecorder = new MediaRecorder(currentStream);
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) recordedChunks.push(event.data);
+                };
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const videoUrl = URL.createObjectURL(blob);
+                    videoElement.srcObject = null;
+                    videoElement.src = videoUrl;
+                    videoElement.controls = true;
+                    videoElement.muted = false; 
+                    videoElement.load();
+
+                    if(currentStream) currentStream.getTracks().forEach(track => track.stop());
+                    reflectionArea.classList.remove('hidden');
+                    isRecording = false;
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                startTranscription(); // Start transcription along with video
+
+                startRecordingBtn.classList.add('hidden');
+                stopRecordingBtn.classList.remove('hidden');
+                reflectionArea.classList.add('hidden'); 
+
+                secondsRecorded = 0;
+                timerDisplay.textContent = formatTime(secondsRecorded);
+                if (timerInterval) clearInterval(timerInterval);
+                timerInterval = setInterval(() => {
+                    secondsRecorded++;
+                    timerDisplay.textContent = formatTime(secondsRecorded);
+                }, 1000);
+
+            } catch (err) {
+                console.error("Error accessing media devices:", err);
+                showCustomModal(`Could not access camera/microphone. Please check permissions. Error: ${err.message}`, [{ text: "OK" }]);
+            }
+        });
+
+        stopRecordingBtn.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state === "recording") {
+                mediaRecorder.stop(); // This will trigger mediaRecorder.onstop
+            }
+            stopTranscription(); // Stop transcription
+            if (timerInterval) clearInterval(timerInterval);
+            stopRecordingBtn.classList.add('hidden');
+            startRecordingBtn.classList.remove('hidden'); 
+            startRecordingBtn.querySelector('span').textContent = "Record Again"; 
+            isRecording = false;
+        });
+        
+        recordAgainBtn.addEventListener('click', () => {
+            setupRecordingPage(currentQuestionStore); 
+        });
+
+
+        savePracticeBtn.addEventListener('click', async () => {
+            if (!currentUserId) {
+                showError("Cannot save: User not authenticated.");
+                return;
+            }
+            if (!currentQuestionStore.text) {
+                 showCustomModal("Cannot save: No question associated with this recording.", [{ text: "OK" }]);
+                return;
+            }
+            const sessionData = {
+                question: currentQuestionStore.text, 
+                guidance: currentQuestionStore.guidance || [], 
+                topic: currentQuestionStore.topic,
+                transcript: currentTranscript.trim(), // Save the final transcript
+                notes: notesInput.value,
+                rating: currentRecordingRating,
+                improvementAreas: improvementAreasInput.value,
+                userId: currentUserId,
+                createdAt: Timestamp.now(),
+            };
+
+            showLoading(true);
+            document.getElementById('savePracticeBtnText').textContent = 'Saving...';
+            document.getElementById('savePracticeBtnIcon').innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin lucide lucide-refresh-cw"><path d="M21 12a9 9 0 0 1-9 9H3"/><path d="M3 12a9 9 0 0 1 9-9h9"/><path d="M21 12v4.5"/><path d="M3 12v-4.5"/></svg>`;
+
+            try {
+                const sessionsCollectionPath = `/artifacts/${appId}/users/${currentUserId}/practiceSessions`;
+                await addDoc(collection(fbDb, sessionsCollectionPath), sessionData);
+                showNotification("Practice session saved!");
+                await fetchPracticeSessions(); 
+                navigateTo('review');
+            } catch (err) {
+                console.error("Error saving practice session:", err);
+                showError("Failed to save your session. Please try again.");
+            } finally {
+                showLoading(false);
+                document.getElementById('savePracticeBtnText').textContent = 'Save Practice Session';
+                document.getElementById('savePracticeBtnIcon').innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`;
+            }
+        });
+        
+        const practiceSessionsListEl = document.getElementById('practiceSessionsList');
+        const noSessionsMessageEl = document.getElementById('noSessionsMessage');
+        
+        async function fetchPracticeSessions() {
+            if (!isAuthReady || !currentUserId) {
+                practiceSessionsStore = [];
+                return;
+            }
+            showLoading(true);
+            try {
+                const sessionsCollectionPath = `/artifacts/${appId}/users/${currentUserId}/practiceSessions`;
+                const q = query(collection(fbDb, sessionsCollectionPath)); 
+                const querySnapshot = await getDocs(q);
+                practiceSessionsStore = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                practiceSessionsStore.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0)); 
+                console.log("Fetched sessions: ", practiceSessionsStore.length);
+            } catch (err) {
+                console.error("Error fetching practice sessions:", err);
+                showError("Could not load your practice sessions.");
+                practiceSessionsStore = [];
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function setupReviewPage() {
+            if (!isAuthReady) { 
+                 practiceSessionsListEl.innerHTML = '<p class="text-center text-slate-500">Authenticating, please wait...</p>';
+                 noSessionsMessageEl.classList.add('hidden');
+                 return;
+            }
+            
+            fetchPracticeSessions().then(() => { 
+                if (practiceSessionsStore.length === 0) {
+                    practiceSessionsListEl.innerHTML = '';
+                    noSessionsMessageEl.classList.remove('hidden');
+                } else {
+                    noSessionsMessageEl.classList.add('hidden');
+                    practiceSessionsListEl.innerHTML = practiceSessionsStore.map(session => `
+                        <div class="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-200">
+                            <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-3">
+                                <h3 class="text-xl font-semibold text-indigo-700 mb-1 sm:mb-0">Topic: ${session.topic || 'N/A'}</h3>
+                                <p class="text-sm text-slate-500">
+                                    ${session.createdAt?.toDate ? new Date(session.createdAt.toDate()).toLocaleDateString() : 'Date unavailable'}
+                                </p>
+                            </div>
+                            <p class="text-slate-600 mb-1 line-clamp-2"><strong>Question:</strong> ${session.question || 'N/A'}</p>
+                            ${session.guidance && session.guidance.length > 0 ? `<ul class="guidance-points text-xs mb-2 pl-4">${session.guidance.map(g => `<li>${g}</li>`).join('')}</ul>` : ''}
+                            ${session.transcript ? `<p class="text-xs text-slate-500 mb-2 line-clamp-3"><em>Transcript: ${session.transcript}</em></p>` : ''}
+                            ${session.rating > 0 ? `
+                                <div class="flex items-center mb-3">
+                                    <span class="text-sm font-medium text-slate-700 mr-2">Rating:</span>
+                                    ${[1,2,3,4,5].map(star => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star ${session.rating >= star ? 'text-yellow-400 fill-yellow-400' : 'text-slate-300'}"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`).join('')}
+                                </div>
+                            ` : ''}
+                            <button data-session-id="${session.id}" class="view-details-btn bg-sky-500 hover:bg-sky-600 text-white font-medium py-2 px-4 rounded-lg shadow-sm hover:shadow-md transition-transform transform hover:scale-105 duration-150 text-sm">
+                                View Details & Edit
+                            </button>
+                        </div>
+                    `).join('');
+
+                    document.querySelectorAll('.view-details-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            const sessionId = e.currentTarget.dataset.sessionId;
+                            const sessionToView = practiceSessionsStore.find(s => s.id === sessionId);
+                            if (sessionToView) {
+                                navigateTo('viewPractice', sessionToView);
+                            }
+                        });
+                    });
+                }
+            });
+        }
+        
+        const viewTopicEl = document.getElementById('viewTopic');
+        const viewDatePracticedEl = document.getElementById('viewDatePracticed');
+        const viewLastUpdatedContainerEl = document.getElementById('viewLastUpdatedContainer');
+        const viewLastUpdatedEl = document.getElementById('viewLastUpdated');
+
+        const displayModePracticeDetailsEl = document.getElementById('displayModePracticeDetails');
+        const viewNotesEl = document.getElementById('viewNotes');
+        const viewRatingStarsContainerEl = document.getElementById('viewRatingStars');
+        const viewImprovementAreasEl = document.getElementById('viewImprovementAreas');
+        const editModePracticeDetailsEl = document.getElementById('editModePracticeDetails');
+        const editNotesInputEl = document.getElementById('editNotesInput');
+        const editRatingStarsContainerEl = document.getElementById('editRatingStars');
+        const editImprovementAreasInputEl = document.getElementById('editImprovementAreasInput');
+        const editPracticeBtn = document.getElementById('editPracticeBtn');
+        const deletePracticeBtn = document.getElementById('deletePracticeBtn');
+        const saveChangesBtn = document.getElementById('saveChangesBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const practiceAgainFromViewBtn = document.getElementById('practiceAgainFromViewBtn');
+
+        let isEditingPractice = false;
+        let editingPracticeRating = 0;
+
+        function populateViewPracticePage(practice) {
+            selectedPracticeStore = practice;
+            viewTopicEl.textContent = practice.topic || 'N/A';
+            viewDatePracticedEl.textContent = practice.createdAt?.toDate ? new Date(practice.createdAt.toDate()).toLocaleString() : 'N/A';
+            if (practice.updatedAt && practice.updatedAt.toDate) {
+                viewLastUpdatedEl.textContent = new Date(practice.updatedAt.toDate()).toLocaleString();
+                viewLastUpdatedContainerEl.classList.remove('hidden');
+            } else {
+                viewLastUpdatedContainerEl.classList.add('hidden');
+            }
+            
+            displayQuestionAndGuidance(
+                practice.question,
+                practice.guidance,
+                null, 
+                viewQuestionTextDisplayEl,
+                viewQuestionGuidanceDisplayEl
+            );
+
+            if (practice.transcript) {
+                viewTranscriptDisplayEl.textContent = practice.transcript;
+                viewTranscriptContainerEl.classList.remove('hidden');
+            } else {
+                viewTranscriptDisplayEl.textContent = '';
+                viewTranscriptContainerEl.classList.add('hidden');
+            }
+
+
+            viewNotesEl.textContent = practice.notes || 'No notes added.';
+            viewNotesEl.classList.toggle('italic', !practice.notes);
+            viewNotesEl.classList.toggle('text-slate-400', !practice.notes);
+
+            if (practice.rating > 0) {
+                renderStars(viewRatingStarsContainerEl, practice.rating, ()=>{}, false); 
+                viewRatingStarsContainerEl.innerHTML += `<span class="ml-2 text-lg text-slate-700">(${practice.rating}/5)</span>`;
+            } else {
+                viewRatingStarsContainerEl.innerHTML = `<p class="text-lg text-slate-700 italic text-slate-400">Not rated.</p>`;
+            }
+            viewImprovementAreasEl.textContent = practice.improvementAreas || 'No improvement areas noted.';
+            viewImprovementAreasEl.classList.toggle('italic', !practice.improvementAreas);
+            viewImprovementAreasEl.classList.toggle('text-slate-400', !practice.improvementAreas);
+
+            editNotesInputEl.value = practice.notes || '';
+            editingPracticeRating = practice.rating || 0;
+            renderStars(editRatingStarsContainerEl, editingPracticeRating, (newRating) => editingPracticeRating = newRating, true);
+            editImprovementAreasInputEl.value = practice.improvementAreas || '';
+            
+            isEditingPractice = false;
+            displayModePracticeDetailsEl.classList.remove('hidden');
+            editModePracticeDetailsEl.classList.add('hidden');
+            editPracticeBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-edit-3"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`; 
+            editPracticeBtn.title = "Edit Session";
+        }
+        
+        function setupViewPracticePage(practice) {
+            if (!practice) {
+                showError("Practice session not found.");
+                navigateTo('review');
+                return;
+            }
+            populateViewPracticePage(practice);
+        }
+
+        editPracticeBtn.addEventListener('click', () => {
+            isEditingPractice = !isEditingPractice;
+            displayModePracticeDetailsEl.classList.toggle('hidden', isEditingPractice);
+            editModePracticeDetailsEl.classList.toggle('hidden', !isEditingPractice);
+            if (isEditingPractice) {
+                editPracticeBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`; 
+                editPracticeBtn.title = "Cancel Edit";
+            } else { 
+                populateViewPracticePage(selectedPracticeStore); 
+            }
+        });
+        
+        cancelEditBtn.addEventListener('click', () => { 
+            isEditingPractice = false;
+            displayModePracticeDetailsEl.classList.remove('hidden');
+            editModePracticeDetailsEl.classList.add('hidden');
+            populateViewPracticePage(selectedPracticeStore); 
+        });
+
+        saveChangesBtn.addEventListener('click', async () => {
+            if (!currentUserId || !selectedPracticeStore?.id) {
+                showError("Cannot update: Session or user ID missing.");
+                return;
+            }
+            const updatedData = { // Transcript is not editable here
+                notes: editNotesInputEl.value,
+                rating: editingPracticeRating,
+                improvementAreas: editImprovementAreasInputEl.value,
+                updatedAt: Timestamp.now(),
+            };
+            
+            showLoading(true);
+            document.getElementById('saveChangesBtnText').textContent = 'Saving...';
+            document.getElementById('saveChangesBtnIcon').innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin lucide lucide-refresh-cw"><path d="M21 12a9 9 0 0 1-9 9H3"/><path d="M3 12a9 9 0 0 1 9-9h9"/><path d="M21 12v4.5"/><path d="M3 12v-4.5"/></svg>`;
+
+            try {
+                const sessionDocRef = doc(fbDb, `/artifacts/${appId}/users/${currentUserId}/practiceSessions`, selectedPracticeStore.id);
+                await setDoc(sessionDocRef, updatedData, { merge: true }); 
+                showNotification("Practice session updated!");
+                
+                selectedPracticeStore = { ...selectedPracticeStore, ...updatedData }; 
+                const sessionIndex = practiceSessionsStore.findIndex(s => s.id === selectedPracticeStore.id);
+                if (sessionIndex > -1) practiceSessionsStore[sessionIndex] = selectedPracticeStore;
+
+                isEditingPractice = false; 
+                populateViewPracticePage(selectedPracticeStore); 
+
+            } catch (err) {
+                console.error("Error updating practice session:", err);
+                showError("Failed to update your session. Please try again.");
+            } finally {
+                showLoading(false);
+                document.getElementById('saveChangesBtnText').textContent = 'Save Changes';
+                document.getElementById('saveChangesBtnIcon').innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`;
+            }
+        });
+
+        deletePracticeBtn.addEventListener('click', () => {
+            if (!currentUserId || !selectedPracticeStore?.id) {
+                showError("Cannot delete: Session or user ID missing.");
+                return;
+            }
+            showCustomModal("Are you sure you want to delete this practice session? This action cannot be undone.", [
+                { text: "Cancel", className: "bg-slate-200 hover:bg-slate-300 text-slate-700" },
+                { text: "Delete", className: "bg-red-500 hover:bg-red-600 text-white", onClick: async () => {
+                    showLoading(true);
+                    try {
+                        const sessionDocRef = doc(fbDb, `/artifacts/${appId}/users/${currentUserId}/practiceSessions`, selectedPracticeStore.id);
+                        await deleteDoc(sessionDocRef);
+                        showNotification("Practice session deleted!");
+                        practiceSessionsStore = practiceSessionsStore.filter(s => s.id !== selectedPracticeStore.id);
+                        navigateTo('review');
+                    } catch (err) {
+                        console.error("Error deleting practice session:", err);
+                        showError("Failed to delete your session. Please try again.");
+                    } finally {
+                        showLoading(false);
+                    }
+                }}
+            ]);
+        });
+        
+        practiceAgainFromViewBtn.addEventListener('click', () => {
+            if (selectedPracticeStore) {
+                const questionToPractice = { 
+                    text: selectedPracticeStore.question, 
+                    topic: selectedPracticeStore.topic,
+                    guidance: selectedPracticeStore.guidance || [] 
+                };
+                navigateTo('recording', questionToPractice);
+            }
+        });
+
+
+        document.getElementById('navHomeLogo').addEventListener('click', () => navigateTo('home'));
+        document.getElementById('navHomeDesktop').addEventListener('click', () => navigateTo('home'));
+        document.getElementById('navNewQuestionDesktop').addEventListener('click', () => navigateTo('questions'));
+        document.getElementById('navMyPracticesDesktop').addEventListener('click', () => navigateTo('review'));
+
+        document.getElementById('navHomeMobile').addEventListener('click', () => navigateTo('home'));
+        document.getElementById('navNewQuestionMobile').addEventListener('click', () => navigateTo('questions'));
+        document.getElementById('navMyPracticesMobile').addEventListener('click', () => navigateTo('review'));
+        
+        mobileMenuButton.addEventListener('click', () => {
+            const isOpen = mobileMenuLinks.classList.toggle('open');
+            menuIconOpen.classList.toggle('hidden', isOpen);
+            menuIconClose.classList.toggle('hidden', !isOpen);
+            mobileMenuButton.setAttribute('aria-expanded', isOpen.toString());
+        });
+
+        document.getElementById('homeGetQuestionBtn').addEventListener('click', () => navigateTo('questions'));
+        document.getElementById('homeReviewPracticesBtn').addEventListener('click', () => navigateTo('review'));
+        document.getElementById('reviewGetQuestionBtn').addEventListener('click', () => navigateTo('questions'));
+        document.getElementById('backToQuestionsBtn').addEventListener('click', () => navigateTo('questions'));
+        document.getElementById('backToReviewBtn').addEventListener('click', () => navigateTo('review'));
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+            initializeFirebase().then(() => {
+                 navigateTo('home'); 
+            });
+        });
+
+    </script>
+</body>
+</html>
